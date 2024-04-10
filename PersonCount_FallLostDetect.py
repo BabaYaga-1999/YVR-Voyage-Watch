@@ -2,12 +2,12 @@ import cv2
 from ultralytics import YOLO
 import datetime
 
-# 定义可能会在机场遗失的物品类别
 lost_items_categories = [
     1, 4, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39,
-    40, 41, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 58, 59, 60,
+    40, 41, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59, 60,
     63, 64, 65, 66, 67, 73, 74, 75, 76, 77, 78, 79
 ]
+# 56: chair
 
 # Load the YOLO model
 model = YOLO('yolov8s.pt')
@@ -30,7 +30,7 @@ while True:
 
     # Initialize the count of people for the current frame and lost item flag
     current_frame_count = 0
-    lost_item_detected = False
+    potential_lost_item_detected = False
     fall_detected = False  # Assuming you have a mechanism or a condition to detect a fall
 
     # Check if detections exist
@@ -50,7 +50,7 @@ while True:
                 current_frame_count += 1
                 aspect_ratio = (y2 - y1) / (x2 - x1)
                 # 判断是否跌倒
-                if aspect_ratio < 0.5:
+                if aspect_ratio < 0.8:  # 0.8 means: height/width < 0.8
                     color = (0, 0, 255)  # Red
                     text_color = (0, 0, 255)
                     fall_detected = True
@@ -58,7 +58,7 @@ while True:
                     color = (0, 255, 0)  # Green
 
             elif cls_idx in lost_items_categories and current_frame_count == 0:
-                lost_item_detected = True
+                potential_lost_item_detected = True
                 color = (0, 255, 255)  # Yellow for lost items if no person detected
                 text_color = (0, 255, 255)
             else:
@@ -71,6 +71,8 @@ while True:
 
     # Display the count of people in the current frame on the video
     cv2.putText(frame, f'Person Count: {current_frame_count}', (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
+    lost_item_detected = potential_lost_item_detected and current_frame_count == 0
 
     # If lost items are detected but no person is detected, display a warning
     if lost_item_detected:
