@@ -1,6 +1,8 @@
 import cv2
 from ultralytics import YOLO
 import datetime
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 lost_items_categories = [
     1, 4, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39,
@@ -17,6 +19,13 @@ cap = cv2.VideoCapture(0)
 
 # Initialize a simple counter for the number of people detected in each frame
 Person_count_per_frame = []
+
+# Initialize a list for storing the cumulative number of people detected
+cumulative_person_count = []
+timestamps = []
+plt.style.use('fivethirtyeight')
+# Initialize a frame counter
+frame_counter = 0
 
 while True:
     # Capture frame-by-frame
@@ -50,7 +59,7 @@ while True:
                 current_frame_count += 1
                 aspect_ratio = (y2 - y1) / (x2 - x1)
                 # 判断是否跌倒
-                if aspect_ratio < 0.8:  # 0.8 means: height/width < 0.8
+                if aspect_ratio < 0.6:  # 0.6 means: height/width < 0.6
                     color = (0, 0, 255)  # Red
                     text_color = (0, 0, 255)
                     fall_detected = True
@@ -91,6 +100,31 @@ while True:
 
     # Display the resulting frame
     cv2.imshow('YOLO Real-time Detection', frame)
+
+    # Append the current frame's person count to the cumulative list
+    cumulative_person_count.append(current_frame_count)
+    timestamps.append(datetime.datetime.now())
+    frame_counter += 1
+
+    # Check if the frame counter is a multiple of 30
+    if frame_counter % 30 == 0:
+        plt.figure(figsize=(12, 7))
+        # Make sure to convert timestamps to matplotlib date format
+        dates = mdates.date2num(timestamps)
+        plt.plot_date(dates, cumulative_person_count, marker='', linestyle='-', color='royalblue', linewidth=2.5)
+        plt.title('Person Volume Log', fontsize=18, fontweight='bold')
+        plt.xlabel('Time', fontsize=14)
+        plt.ylabel('Number of People', fontsize=14)
+        # Format the date axis
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator())
+        plt.gca().xaxis.set_minor_locator(mdates.SecondLocator(interval=30))
+        plt.gcf().autofmt_xdate()  # Beautify the x-labels
+        plt.grid(True, which='major', linestyle='--', linewidth=0.5, color='gray')
+        plt.grid(True, which='minor', linestyle=':', linewidth=0.5, color='lightgray')
+        plt.tight_layout()  # Adjust the layout to make room for the rotated x-axis labels
+        plt.savefig('cumulative_flow_chart.png')  # This will overwrite the existing file
+        plt.close()
 
     # Break loop with 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
