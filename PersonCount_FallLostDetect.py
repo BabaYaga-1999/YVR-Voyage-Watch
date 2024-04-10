@@ -76,13 +76,13 @@ while True:
     if lost_item_detected:
         cv2.putText(frame, "Lost Item Detected!", (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         print('Lost Item Detected!')
-        print('Event Level: 1')
+        print('Event Level: 3')
 
     # Check for fall detection
     if fall_detected:
         cv2.putText(frame, 'Person Fall Detected!', (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
         print('Person Fall Detected!')
-        print('Event Level: 3')
+        print('Event Level: 1')
 
     # Record the count of people per frame
     Person_count_per_frame.append(current_frame_count)
