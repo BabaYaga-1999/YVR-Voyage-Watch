@@ -17,11 +17,14 @@ lost_items_categories = [
 ]
 # 56: chair
 
-MIN_DISTANCE = 60
-DETECT_FACTOR = 5
+MIN_DISTANCE = 600
+DETECT_FACTOR = 3
 lost_item_folder = "LostItem"
 fall_detected_folder = "FallDetected"
 maintenance_required_folder = "MaintenanceRequired"
+fall_counter = 0
+lost_item_counter = 0
+broken_tile_counter = 0
 
 ########################################################FIREBASE######################################################
 # Firebase initialization
@@ -98,9 +101,9 @@ out = cv2.VideoWriter('output.avi', fourcc, fps, (frame_width, frame_height))
 #################################CAPTURE#######################################################################
 while True:
     # Capture frame-by-frame
-    ret, frame = cap.read()
-    if not ret:
-        break
+    screenshot = pyautogui.screenshot()
+    frame = np.array(screenshot)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     # Perform detection (converting from BGR to RGB)
     results = model([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)])
@@ -195,6 +198,7 @@ while True:
     else:
         broken_tile_counter = 0  # Reset counter if no broken tile detected this frame
 
+    #############################################PUSH IMAGES#######################################################
     # Check if any of the counters reach the DETECT_FACTOR threshold to save images
     if lost_item_counter >= DETECT_FACTOR:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -202,10 +206,10 @@ while True:
         cv2.imwrite(os.path.join(lost_item_folder, image_name), frame)
         
         
-        image1 = "LostItem\\" + image_name
-        record = Record("Camera 1", 81, 2)
-        record.add_image(image1)
-        upload_record(record)
+        # image1 = "LostItem\\" + image_name
+        # record = Record("Camera 1", 81, 2)
+        # record.add_image(image1)
+        # upload_record(record)
         lost_item_counter = 0  # Optionally reset counter after saving
 
     if fall_counter >= DETECT_FACTOR:
@@ -213,15 +217,21 @@ while True:
         image_name = f"FallDetected_{timestamp}.png"
         cv2.imwrite(os.path.join(fall_detected_folder, image_name), frame)
 
-        image1 = "FallDetected\\"+image_name
-        record = Record("Camera 1", 80, 1)
-        record.add_image(image1)
-        upload_record(record)
+        # image1 = "FallDetected\\"+image_name
+        # record = Record("Camera 1", 80, 1)
+        # record.add_image(image1)
+        # upload_record(record)
         fall_counter = 0  # Optionally reset counter after saving
 
     if broken_tile_counter >= DETECT_FACTOR:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        cv2.imwrite(os.path.join(maintenance_required_folder, f"MaintenanceRequired_{timestamp}.png"), frame)
+        image_name = f"MaintenanceRequired_{timestamp}.png"
+        cv2.imwrite(os.path.join(maintenance_required_folder, image_name), frame)
+
+        # image1 = "MaintenanceRequired\\" + image_name
+        # record = Record("Camera 1", 82, 3)
+        # record.add_image(image1)
+        # upload_record(record)
         broken_tile_counter = 0  # Optionally reset counter after saving
 
     # Write the frame into the output file

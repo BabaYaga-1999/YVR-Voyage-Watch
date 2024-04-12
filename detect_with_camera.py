@@ -1,5 +1,6 @@
 import cv2
 from ultralytics import YOLO
+import pyautogui
 import os
 import datetime
 import matplotlib.pyplot as plt
@@ -16,11 +17,16 @@ lost_items_categories = [
 ]
 # 56: chair
 
-
+MIN_DISTANCE = 600
+DETECT_FACTOR = 3
 lost_item_folder = "LostItem"
 fall_detected_folder = "FallDetected"
 maintenance_required_folder = "MaintenanceRequired"
+fall_counter = 0
+lost_item_counter = 0
+broken_tile_counter = 0
 
+########################################################FIREBASE######################################################
 # Firebase initialization
 cred = credentials.Certificate("firebase_key.json")
 firebase_admin.initialize_app(cred, {
@@ -52,20 +58,19 @@ def upload_record(record):
         "status": record.status
     })
 
-
+###################################CREATE FOLDERS################################################################
 # create directories if they don't exist
 for folder in [lost_item_folder, fall_detected_folder, maintenance_required_folder]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+
+########################################YOLO##########################################################################
 def bbox_center_distance(bbox1, bbox2):
     center1 = ((bbox1[0] + bbox1[2]) / 2, (bbox1[1] + bbox1[3]) / 2)
     center2 = ((bbox2[0] + bbox2[2]) / 2, (bbox2[1] + bbox2[3]) / 2)
     distance = np.sqrt((center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2)
     return distance
-
-MIN_DISTANCE = 60
-DETECT_FACTOR = 5
 
 # Load the YOLO model
 model = YOLO('yolov8s.pt')
@@ -93,6 +98,7 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter('output.avi', fourcc, fps, (frame_width, frame_height))
 
+#################################CAPTURE#######################################################################
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
@@ -107,6 +113,8 @@ while True:
     results2 = model2([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)])
     result2 = results2[0].cpu()  # Ensure the results are on CPU
 
+
+    ############################################DETECTION##########################################################
     # Initialize the count of people for the current frame and lost item flag
     current_frame_count = 0
     potential_lost_item_detected = False
@@ -197,10 +205,10 @@ while True:
         cv2.imwrite(os.path.join(lost_item_folder, image_name), frame)
         
         
-        image1 = "LostItem\\" + image_name
-        record = Record("Camera 1", 81, 2)
-        record.add_image(image1)
-        upload_record(record)
+        # image1 = "LostItem\\" + image_name
+        # record = Record("Camera 1", 81, 2)
+        # record.add_image(image1)
+        # upload_record(record)
         lost_item_counter = 0  # Optionally reset counter after saving
 
     if fall_counter >= DETECT_FACTOR:
@@ -208,15 +216,21 @@ while True:
         image_name = f"FallDetected_{timestamp}.png"
         cv2.imwrite(os.path.join(fall_detected_folder, image_name), frame)
 
-        image1 = "FallDetected\\"+image_name
-        record = Record("Camera 1", 80, 1)
-        record.add_image(image1)
-        upload_record(record)
+        # image1 = "FallDetected\\"+image_name
+        # record = Record("Camera 1", 80, 1)
+        # record.add_image(image1)
+        # upload_record(record)
         fall_counter = 0  # Optionally reset counter after saving
 
     if broken_tile_counter >= DETECT_FACTOR:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        cv2.imwrite(os.path.join(maintenance_required_folder, f"MaintenanceRequired_{timestamp}.png"), frame)
+        image_name = f"MaintenanceRequired_{timestamp}.png"
+        cv2.imwrite(os.path.join(maintenance_required_folder, image_name), frame)
+
+        image1 = "MaintenanceRequired\\" + image_name
+        record = Record("Camera 1", 82, 3)
+        record.add_image(image1)
+        upload_record(record)
         broken_tile_counter = 0  # Optionally reset counter after saving
 
     # Write the frame into the output file
@@ -230,6 +244,7 @@ while True:
     # Display the resulting frame
     cv2.imshow('YOLO Real-time Detection', frame)
 
+    #########################################################PLOT#####################################################
     # Append the current frame's person count to the cumulative list
     cumulative_person_count.append(current_frame_count)
     timestamps.append(datetime.datetime.now())
