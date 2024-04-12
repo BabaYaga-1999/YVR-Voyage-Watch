@@ -13,13 +13,13 @@ lost_items_categories = [
 ]
 # 56: chair
 
-DETECT_FACTOR = 3
+
 
 lost_item_folder = "LostItem"
 fall_detected_folder = "FallDetected"
 maintenance_required_folder = "MaintenanceRequired"
 
-# 确保文件夹存在，如果不存在，则创建
+# create directories if they don't exist
 for folder in [lost_item_folder, fall_detected_folder, maintenance_required_folder]:
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -31,6 +31,7 @@ def bbox_center_distance(bbox1, bbox2):
     return distance
 
 MIN_DISTANCE = 60
+DETECT_FACTOR = 5
 
 # Load the YOLO model
 model = YOLO('yolov8s.pt')
@@ -208,7 +209,7 @@ while True:
         plt.close()
 
     # Break loop with 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'): 
         break
 
 # When everything is done, release the capture
