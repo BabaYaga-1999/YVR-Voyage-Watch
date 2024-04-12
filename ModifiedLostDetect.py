@@ -13,6 +13,8 @@ lost_items_categories = [
 ]
 # 56: chair
 
+DETECT_FACTOR = 3
+
 lost_item_folder = "LostItem"
 fall_detected_folder = "FallDetected"
 maintenance_required_folder = "MaintenanceRequired"
@@ -35,7 +37,7 @@ model = YOLO('yolov8s.pt')
 model2 = YOLO('BrokenTile.pt')
 
 # Initialize video capture
-cap = cv2.VideoCapture('Raw_ Airport Video Shows Kim Brother Attack.mp4')
+cap = cv2.VideoCapture(0)
 
 # Initialize a simple counter for the number of people detected in each frame
 Person_count_per_frame = []
@@ -137,29 +139,40 @@ while True:
     cv2.putText(frame, f'Person Count: {current_frame_count}', (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
     # If lost items are detected but no person is detected, display a warning
+    # Update detection counters
     if potential_lost_item_detected:
-        cv2.putText(frame, "Lost Item Detected!", (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-        print('Lost Item Detected!')
-        print('Event Level: 3')
-        # 保存截图
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        cv2.imwrite(os.path.join(lost_item_folder, f"LostItem_{timestamp}.png"), frame)
+        lost_item_counter += 1
+    else:
+          lost_item_counter = 0  # Reset counter if no lost item detected this frame
 
     if fall_detected:
-        cv2.putText(frame, 'Person Fall Detected!', (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-        print('Person Fall Detected!')
-        print('Event Level: 1')
-        # 保存截图
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        cv2.imwrite(os.path.join(fall_detected_folder, f"FallDetected_{timestamp}.png"), frame)
+        fall_counter += 1
+    else:
+        fall_counter = 0  # Reset counter if no fall detected this frame
 
     if broken_tile_detected:
-        print("Maintenance Required!")
-        print('Event Level: 2')
-        # 保存截图
+        broken_tile_counter += 1
+    else:
+        broken_tile_counter = 0  # Reset counter if no broken tile detected this frame
+
+    # Check if any of the counters reach the DETECT_FACTOR threshold to save images
+    if lost_item_counter >= DETECT_FACTOR:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        cv2.imwrite(os.path.join(lost_item_folder, f"LostItem_{timestamp}.png"), frame)
+        lost_item_counter = 0  # Optionally reset counter after saving
+
+    if fall_counter >= DETECT_FACTOR:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        cv2.imwrite(os.path.join(fall_detected_folder, f"FallDetected_{timestamp}.png"), frame)
+        fall_counter = 0  # Optionally reset counter after saving
+
+    if broken_tile_counter >= DETECT_FACTOR:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         cv2.imwrite(os.path.join(maintenance_required_folder, f"MaintenanceRequired_{timestamp}.png"), frame)
+        broken_tile_counter = 0  # Optionally reset counter after saving
 
+    # Write the frame into the output file
+    out.write(frame)
     # Record the count of people per frame
     Person_count_per_frame.append(current_frame_count)
 
