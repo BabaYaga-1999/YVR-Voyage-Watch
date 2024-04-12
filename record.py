@@ -17,7 +17,8 @@ class Record:
         60: "dining table", 61: "toilet", 62: "tv", 63: "laptop", 64: "mouse",
         65: "remote", 66: "keyboard", 67: "cell phone", 68: "microwave", 69: "oven",
         70: "toaster", 71: "sink", 72: "refrigerator", 73: "book", 74: "clock",
-        75: "vase", 76: "scissors", 77: "teddy bear", 78: "hair drier", 79: "toothbrush"
+        75: "vase", 76: "scissors", 77: "teddy bear", 78: "hair drier", 79: "toothbrush",
+        80: "Human Fall", 81: "Lost Item"
         }
     
     def __init__(self, area, issue_type, level):
@@ -27,6 +28,7 @@ class Record:
         self.level = level
         self.images = []
         self.claimBy = ""
+        self.status = "Notified"
 
     def add_image(self, image_path):
         self.images.append(image_path)
