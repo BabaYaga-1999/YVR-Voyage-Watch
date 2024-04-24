@@ -1,3 +1,7 @@
+# Project Slides
+
+https://www.canva.com/design/DAGDXXiglps/6LtAnEoD3xhWic7M1fg6Zg/edit
+
 # Yolo Application Overview
 
 This application utilizes YOLO models for various monitoring and analysis purposes. It includes three main functionalities within the `models` folder:
